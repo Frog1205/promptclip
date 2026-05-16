@@ -38,6 +38,21 @@ function downloadFile(fileName: string, content: string, type: string) {
   URL.revokeObjectURL(url)
 }
 
+function decodeImportTexts(buffer: ArrayBuffer): string[] {
+  const encodings = ['utf-8', 'gb18030', 'gbk', 'utf-16le']
+  const texts = encodings
+    .map((encoding) => {
+      try {
+        return new TextDecoder(encoding).decode(buffer)
+      } catch {
+        return ''
+      }
+    })
+    .filter(Boolean)
+
+  return Array.from(new Set(texts))
+}
+
 function createImportTemplate(): string {
   const rows = [
     ['类型', '名称', '主体', '风格', '细节'],
@@ -165,15 +180,15 @@ export default function TeacherPanel({
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
-      const text = reader.result as string
-      const ok = onImport(text)
+      const buffer = reader.result as ArrayBuffer
+      const ok = decodeImportTexts(buffer).some((text) => onImport(text))
       if (ok) {
         showBatchMsg('✅ 批量导入成功！词库已经更新。')
       } else {
-        showBatchMsg('❌ 这个文件不能导入词库，请选择从本工具批量导出的词库文件。')
+        showBatchMsg('❌ 这个文件不能导入词库，请使用“下载导入模板”生成的表格，或选择批量导出的词库文件。')
       }
     }
-    reader.readAsText(file)
+    reader.readAsArrayBuffer(file)
     if (fileRef.current) fileRef.current.value = ''
   }
 

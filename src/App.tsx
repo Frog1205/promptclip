@@ -37,7 +37,23 @@ function isLibraryData(value: unknown): value is LibraryData {
   )
 }
 
-function parseCsvLine(line: string): string[] {
+function normalizeImportLabel(value: string): string {
+  return value
+    .replace(/^\uFEFF/, '')
+    .replace(/\s/g, '')
+    .replace(/[（(].*?[）)]/g, '')
+    .toLowerCase()
+}
+
+function detectCsvDelimiter(headerLine: string): string {
+  const candidates = [',', '\t', ';', '，']
+  return candidates.reduce((best, delimiter) => {
+    const count = headerLine.split(delimiter).length
+    return count > headerLine.split(best).length ? delimiter : best
+  }, ',')
+}
+
+function parseCsvLine(line: string, delimiter = ','): string[] {
   const cells: string[] = []
   let current = ''
   let inQuotes = false
@@ -51,7 +67,7 @@ function parseCsvLine(line: string): string[] {
       i += 1
     } else if (char === '"') {
       inQuotes = !inQuotes
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === delimiter && !inQuotes) {
       cells.push(current.trim())
       current = ''
     } else {
@@ -72,12 +88,13 @@ function parseImportCsv(text: string): LibraryData | null {
 
   if (lines.length < 2) return null
 
-  const headers = parseCsvLine(lines[0])
-  const typeIndex = headers.findIndex((h) => ['类型', '分类', 'category', 'type'].includes(h))
-  const nameIndex = headers.findIndex((h) => ['名称', '词条', 'text', 'name'].includes(h))
-  const subjectIndex = headers.findIndex((h) => ['主体', 'subject'].includes(h))
-  const styleIndex = headers.findIndex((h) => ['风格', 'style'].includes(h))
-  const detailsIndex = headers.findIndex((h) => ['细节', 'details'].includes(h))
+  const delimiter = detectCsvDelimiter(lines[0])
+  const normalizedHeaders = parseCsvLine(lines[0], delimiter).map(normalizeImportLabel)
+  const typeIndex = normalizedHeaders.findIndex((h) => ['类型', '分类', 'category', 'type'].includes(h))
+  const nameIndex = normalizedHeaders.findIndex((h) => ['名称', '词条', 'text', 'name'].includes(h))
+  const subjectIndex = normalizedHeaders.findIndex((h) => ['主体', 'subject'].includes(h))
+  const styleIndex = normalizedHeaders.findIndex((h) => ['风格', 'style'].includes(h))
+  const detailsIndex = normalizedHeaders.findIndex((h) => ['细节', 'details'].includes(h))
 
   if (typeIndex < 0 || nameIndex < 0) return null
 
@@ -87,8 +104,8 @@ function parseImportCsv(text: string): LibraryData | null {
   const templates: Template[] = []
 
   lines.slice(1).forEach((line, index) => {
-    const cells = parseCsvLine(line)
-    const type = cells[typeIndex]?.trim()
+    const cells = parseCsvLine(line, delimiter)
+    const type = normalizeImportLabel(cells[typeIndex] || '')
     const name = cells[nameIndex]?.trim()
     if (!type || !name || type.startsWith('#')) return
 
