@@ -6,7 +6,7 @@ interface Props {
   onAddWord: (category: 'subjects' | 'styles' | 'details', text: string) => void
   onResetLibrary: () => void
   onExport: () => string
-  onImport: (json: string) => boolean
+  onImport: (backupText: string) => boolean
 }
 
 const categoryLabels: Record<string, string> = {
@@ -24,7 +24,7 @@ export default function TeacherPanel({
 }: Props) {
   const [addCategory, setAddCategory] = useState<'subjects' | 'styles' | 'details'>('subjects')
   const [newWord, setNewWord] = useState('')
-  const [importMsg, setImportMsg] = useState('')
+  const [backupMsg, setBackupMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handleAdd() {
@@ -38,18 +38,24 @@ export default function TeacherPanel({
     if (e.key === 'Enter') handleAdd()
   }
 
-  function handleExport() {
-    const json = onExport()
-    const blob = new Blob([json], { type: 'application/json' })
+  function showBackupMsg(message: string) {
+    setBackupMsg(message)
+    setTimeout(() => setBackupMsg(''), 3500)
+  }
+
+  function handleSaveBackup() {
+    const backupText = onExport()
+    const blob = new Blob([backupText], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'promptclip-词库.json'
+    a.download = 'PromptClip-词库备份.promptclip'
     a.click()
     URL.revokeObjectURL(url)
+    showBackupMsg('✅ 已保存词库备份。下次换电脑或换浏览器时，可以用它恢复。')
   }
 
-  function handleImport() {
+  function handleRestoreBackup() {
     fileRef.current?.click()
   }
 
@@ -61,11 +67,10 @@ export default function TeacherPanel({
       const text = reader.result as string
       const ok = onImport(text)
       if (ok) {
-        setImportMsg('✅ 导入成功！')
+        showBackupMsg('✅ 恢复成功！词库已经换成备份里的内容。')
       } else {
-        setImportMsg('❌ 文件格式不正确，请检查')
+        showBackupMsg('❌ 这个文件不能恢复词库，请选择之前保存的词库备份。')
       }
-      setTimeout(() => setImportMsg(''), 3000)
     }
     reader.readAsText(file)
     if (fileRef.current) fileRef.current.value = ''
@@ -126,25 +131,46 @@ export default function TeacherPanel({
       </div>
 
       <div className="teacher-row teacher-actions">
-        <button className="btn btn-export" onClick={handleExport}>
-          📤 导出词库 JSON
-        </button>
-        <button className="btn btn-import" onClick={handleImport}>
-          📥 导入词库 JSON
-        </button>
+        <div className="backup-card">
+          <div>
+            <div className="backup-title">保存我的词库</div>
+            <div className="backup-desc">把当前词条保存成一个备份文件，方便发给同事或换电脑使用。</div>
+          </div>
+          <button className="btn btn-export" onClick={handleSaveBackup}>
+            保存备份
+          </button>
+        </div>
+
+        <div className="backup-card">
+          <div>
+            <div className="backup-title">恢复别人给我的词库</div>
+            <div className="backup-desc">选择之前保存的词库备份文件，恢复后会替换当前词库。</div>
+          </div>
+          <button className="btn btn-import" onClick={handleRestoreBackup}>
+            选择备份文件
+          </button>
+        </div>
+
         <input
           ref={fileRef}
           type="file"
-          accept=".json"
+          accept=".promptclip,.json,application/json"
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
-        <button className="btn btn-reset" onClick={onResetLibrary}>
-          🔄 恢复默认词库
-        </button>
+
+        <div className="backup-card reset-card">
+          <div>
+            <div className="backup-title">回到初始词库</div>
+            <div className="backup-desc">清空自己添加和恢复的内容，回到系统预设词条。</div>
+          </div>
+          <button className="btn btn-reset" onClick={onResetLibrary}>
+            恢复默认
+          </button>
+        </div>
       </div>
 
-      {importMsg && <div className="import-msg">{importMsg}</div>}
+      {backupMsg && <div className="import-msg">{backupMsg}</div>}
     </section>
   )
 }
