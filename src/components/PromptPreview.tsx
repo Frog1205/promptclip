@@ -10,7 +10,12 @@ interface Props {
 export default function PromptPreview({ prompt, subject, style, details }: Props) {
   const [copied, setCopied] = useState(false)
   const [animating, setAnimating] = useState(false)
+  const [editablePrompt, setEditablePrompt] = useState(prompt)
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    setEditablePrompt(prompt)
+  }, [prompt])
 
   useEffect(() => {
     return () => {
@@ -19,8 +24,8 @@ export default function PromptPreview({ prompt, subject, style, details }: Props
   }, [])
 
   function handleCopy() {
-    if (!prompt) return
-    navigator.clipboard.writeText(prompt).then(() => {
+    if (!editablePrompt.trim()) return
+    navigator.clipboard.writeText(editablePrompt).then(() => {
       setCopied(true)
       setAnimating(true)
       timerRef.current = setTimeout(() => {
@@ -32,6 +37,7 @@ export default function PromptPreview({ prompt, subject, style, details }: Props
 
   const hasSelection = subject || style || details.length > 0
   const isEmpty = !hasSelection
+  const copyDisabled = isEmpty || !editablePrompt.trim()
 
   return (
     <div className={`prompt-preview ${copied ? 'copied' : ''}`}>
@@ -41,7 +47,12 @@ export default function PromptPreview({ prompt, subject, style, details }: Props
         {isEmpty ? (
           <p className="preview-empty">点击上方卡片来拼装你的提示词吧 ✂️</p>
         ) : (
-          <p className="preview-text">{prompt}</p>
+          <textarea
+            className="preview-textarea"
+            value={editablePrompt}
+            onChange={(event) => setEditablePrompt(event.target.value)}
+            aria-label="编辑生成的提示词"
+          />
         )}
       </div>
 
@@ -49,7 +60,7 @@ export default function PromptPreview({ prompt, subject, style, details }: Props
         <button
           className="btn btn-copy"
           onClick={handleCopy}
-          disabled={isEmpty}
+          disabled={copyDisabled}
         >
           📋 复制给 AI
         </button>

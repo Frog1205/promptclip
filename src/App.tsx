@@ -8,6 +8,23 @@ import TemplateBar from './components/TemplateBar'
 import TeacherPanel from './components/TeacherPanel'
 
 const STORAGE_KEY = 'promptclip-library'
+const OLD_A6_DETAIL = 'A6 尺寸'
+const NEW_A6_DETAIL = 'A6尺寸横版明信片'
+
+function normalizeLibrary(library: LibraryData): LibraryData {
+  return {
+    ...library,
+    details: library.details.map((detail) =>
+      detail.text === OLD_A6_DETAIL ? { ...detail, text: NEW_A6_DETAIL } : detail
+    ),
+    templates: library.templates.map((template) => ({
+      ...template,
+      details: template.details.map((detail) =>
+        detail === OLD_A6_DETAIL ? NEW_A6_DETAIL : detail
+      ),
+    })),
+  }
+}
 
 function loadLibrary(): LibraryData {
   try {
@@ -21,13 +38,13 @@ function loadLibrary(): LibraryData {
         Array.isArray(parsed.details) &&
         Array.isArray(parsed.templates)
       ) {
-        return parsed
+        return normalizeLibrary(parsed)
       }
     }
   } catch {
     // ignore
   }
-  return getDefaultLibrary()
+  return normalizeLibrary(getDefaultLibrary())
 }
 
 function buildPromptText(
@@ -57,10 +74,6 @@ function buildPromptText(
     if (detailTexts.length > 0) {
       parts.push(`画面中加入${detailTexts.join('、')}`)
     }
-  }
-
-  if (parts.length > 0) {
-    parts.push('整体温暖明亮，适合低龄儿童 AI 创作。')
   }
 
   return parts.join('，')

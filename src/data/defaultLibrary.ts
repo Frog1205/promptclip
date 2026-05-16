@@ -13,7 +13,7 @@ const defaultTemplates = [
     name: '石渠文创明信片',
     subject: '扎溪卡草原',
     style: '水彩',
-    details: ['藏八宝纹样', 'A6 尺寸', '温暖明亮', '五色经幡'],
+    details: ['藏八宝纹样', 'A6尺寸横版明信片', '温暖明亮', '五色经幡'],
   },
   {
     id: 'tpl-3',
@@ -77,7 +77,7 @@ export function getDefaultLibrary(): LibraryData {
       { id: 'det-9', text: '大耳朵 / 大眼睛' },
       { id: 'det-10', text: '背景虚化' },
       { id: 'det-11', text: '1:1 方形构图' },
-      { id: 'det-12', text: 'A6 尺寸' },
+      { id: 'det-12', text: 'A6尺寸横版明信片' },
       { id: 'det-13', text: '主体居中' },
       { id: 'det-14', text: '温暖明亮' },
     ],

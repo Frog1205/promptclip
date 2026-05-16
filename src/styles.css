@@ -412,6 +412,20 @@ input, select {
   word-break: break-word;
 }
 
+.preview-textarea {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #3a2a1a;
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
 /* ===== Preview Actions ===== */
 .preview-actions {
   display: flex;
