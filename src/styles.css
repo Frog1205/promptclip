@@ -611,7 +611,7 @@ input, select {
 
 .teacher-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   align-items: stretch;
 }
@@ -647,6 +647,11 @@ input, select {
   border-color: #f2bfcd;
 }
 
+.template-card {
+  background: #fffdf4;
+  border-color: #e5d178;
+}
+
 .btn-export {
   background: #f0f5fb;
   color: #29527b;
@@ -665,6 +670,16 @@ input, select {
 
 .btn-import:hover {
   background: #e6f2dc;
+}
+
+.btn-template {
+  background: #fff9df;
+  color: #6b4b00;
+  border: 2px solid #d6b656;
+}
+
+.btn-template:hover {
+  background: #f7edbe;
 }
 
 .btn-reset {

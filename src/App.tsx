@@ -26,17 +26,111 @@ function normalizeLibrary(library: LibraryData): LibraryData {
   }
 }
 
+function isLibraryData(value: unknown): value is LibraryData {
+  const data = value as LibraryData
+  return Boolean(
+    data &&
+      Array.isArray(data.subjects) &&
+      Array.isArray(data.styles) &&
+      Array.isArray(data.details) &&
+      Array.isArray(data.templates)
+  )
+}
+
+function parseCsvLine(line: string): string[] {
+  const cells: string[] = []
+  let current = ''
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i]
+    const next = line[i + 1]
+
+    if (char === '"' && inQuotes && next === '"') {
+      current += '"'
+      i += 1
+    } else if (char === '"') {
+      inQuotes = !inQuotes
+    } else if (char === ',' && !inQuotes) {
+      cells.push(current.trim())
+      current = ''
+    } else {
+      current += char
+    }
+  }
+
+  cells.push(current.trim())
+  return cells
+}
+
+function parseImportCsv(text: string): LibraryData | null {
+  const lines = text
+    .replace(/^\uFEFF/, '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  if (lines.length < 2) return null
+
+  const headers = parseCsvLine(lines[0])
+  const typeIndex = headers.findIndex((h) => ['类型', '分类', 'category', 'type'].includes(h))
+  const nameIndex = headers.findIndex((h) => ['名称', '词条', 'text', 'name'].includes(h))
+  const subjectIndex = headers.findIndex((h) => ['主体', 'subject'].includes(h))
+  const styleIndex = headers.findIndex((h) => ['风格', 'style'].includes(h))
+  const detailsIndex = headers.findIndex((h) => ['细节', 'details'].includes(h))
+
+  if (typeIndex < 0 || nameIndex < 0) return null
+
+  const subjects: WordItem[] = []
+  const styles: WordItem[] = []
+  const details: WordItem[] = []
+  const templates: Template[] = []
+
+  lines.slice(1).forEach((line, index) => {
+    const cells = parseCsvLine(line)
+    const type = cells[typeIndex]?.trim()
+    const name = cells[nameIndex]?.trim()
+    if (!type || !name || type.startsWith('#')) return
+
+    if (['主体', 'subjects', 'subject'].includes(type)) {
+      subjects.push({ id: `import-subject-${index}`, text: name, custom: true })
+    } else if (['风格', 'styles', 'style'].includes(type)) {
+      styles.push({ id: `import-style-${index}`, text: name, custom: true })
+    } else if (['细节', 'details', 'detail'].includes(type)) {
+      details.push({ id: `import-detail-${index}`, text: name, custom: true })
+    } else if (['模板', 'templates', 'template'].includes(type)) {
+      const subject = cells[subjectIndex]?.trim()
+      const style = cells[styleIndex]?.trim()
+      const detailText = cells[detailsIndex]?.trim()
+      if (subject && style) {
+        templates.push({
+          id: `import-template-${index}`,
+          name,
+          subject,
+          style,
+          details: detailText ? detailText.split(/[、;；]/).map((d) => d.trim()).filter(Boolean) : [],
+        })
+      }
+    }
+  })
+
+  if (subjects.length === 0 && styles.length === 0 && details.length === 0) return null
+
+  return normalizeLibrary({
+    subjects,
+    styles,
+    details,
+    templates: templates.length > 0 ? templates : getDefaultLibrary().templates,
+  })
+}
+
 function loadLibrary(): LibraryData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
       if (
-        parsed &&
-        Array.isArray(parsed.subjects) &&
-        Array.isArray(parsed.styles) &&
-        Array.isArray(parsed.details) &&
-        Array.isArray(parsed.templates)
+        isLibraryData(parsed)
       ) {
         return normalizeLibrary(parsed)
       }
@@ -176,21 +270,22 @@ export default function App() {
     return JSON.stringify(library, null, 2)
   }, [library])
 
-  const handleImport = useCallback((json: string): boolean => {
+  const handleImport = useCallback((libraryText: string): boolean => {
     try {
-      const parsed = JSON.parse(json)
-      if (
-        parsed &&
-        Array.isArray(parsed.subjects) &&
-        Array.isArray(parsed.styles) &&
-        Array.isArray(parsed.details) &&
-        Array.isArray(parsed.templates)
-      ) {
-        setLibrary(parsed)
+      const embeddedData = libraryText.match(
+        /<script[^>]*id=["']promptclip-library-data["'][^>]*>([\s\S]*?)<\/script>/i
+      )?.[1]
+      const parsed = JSON.parse(embeddedData || libraryText)
+      if (isLibraryData(parsed)) {
+        setLibrary(normalizeLibrary(parsed))
         return true
       }
     } catch {
-      // invalid
+      const parsedCsv = parseImportCsv(libraryText)
+      if (parsedCsv) {
+        setLibrary(parsedCsv)
+        return true
+      }
     }
     return false
   }, [])
