@@ -6,7 +6,7 @@ interface Props {
   onAddWord: (category: 'subjects' | 'styles' | 'details', text: string) => void
   onResetLibrary: () => void
   onExport: () => string
-  onImport: (backupText: string) => boolean
+  onImport: (libraryText: string) => boolean
 }
 
 const categoryLabels: Record<string, string> = {
@@ -24,7 +24,7 @@ export default function TeacherPanel({
 }: Props) {
   const [addCategory, setAddCategory] = useState<'subjects' | 'styles' | 'details'>('subjects')
   const [newWord, setNewWord] = useState('')
-  const [backupMsg, setBackupMsg] = useState('')
+  const [batchMsg, setBatchMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handleAdd() {
@@ -38,24 +38,24 @@ export default function TeacherPanel({
     if (e.key === 'Enter') handleAdd()
   }
 
-  function showBackupMsg(message: string) {
-    setBackupMsg(message)
-    setTimeout(() => setBackupMsg(''), 3500)
+  function showBatchMsg(message: string) {
+    setBatchMsg(message)
+    setTimeout(() => setBatchMsg(''), 3500)
   }
 
-  function handleSaveBackup() {
-    const backupText = onExport()
-    const blob = new Blob([backupText], { type: 'application/json' })
+  function handleBatchExport() {
+    const libraryText = onExport()
+    const blob = new Blob([libraryText], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'PromptClip-词库备份.promptclip'
+    a.download = 'PromptClip-批量词库.promptclip'
     a.click()
     URL.revokeObjectURL(url)
-    showBackupMsg('✅ 已保存词库备份。下次换电脑或换浏览器时，可以用它恢复。')
+    showBatchMsg('✅ 已批量导出词库。可以把这个文件发给其他老师使用。')
   }
 
-  function handleRestoreBackup() {
+  function handleBatchImport() {
     fileRef.current?.click()
   }
 
@@ -67,9 +67,9 @@ export default function TeacherPanel({
       const text = reader.result as string
       const ok = onImport(text)
       if (ok) {
-        showBackupMsg('✅ 恢复成功！词库已经换成备份里的内容。')
+        showBatchMsg('✅ 批量导入成功！词库已经更新。')
       } else {
-        showBackupMsg('❌ 这个文件不能恢复词库，请选择之前保存的词库备份。')
+        showBatchMsg('❌ 这个文件不能导入词库，请选择从本工具批量导出的词库文件。')
       }
     }
     reader.readAsText(file)
@@ -133,21 +133,21 @@ export default function TeacherPanel({
       <div className="teacher-row teacher-actions">
         <div className="backup-card">
           <div>
-            <div className="backup-title">保存我的词库</div>
-            <div className="backup-desc">把当前词条保存成一个备份文件，方便发给同事或换电脑使用。</div>
+            <div className="backup-title">批量导出词库</div>
+            <div className="backup-desc">把当前所有主体、风格、细节词条打包成一个文件，方便发给其他老师。</div>
           </div>
-          <button className="btn btn-export" onClick={handleSaveBackup}>
-            保存备份
+          <button className="btn btn-export" onClick={handleBatchExport}>
+            批量导出
           </button>
         </div>
 
         <div className="backup-card">
           <div>
-            <div className="backup-title">恢复别人给我的词库</div>
-            <div className="backup-desc">选择之前保存的词库备份文件，恢复后会替换当前词库。</div>
+            <div className="backup-title">批量导入词库</div>
+            <div className="backup-desc">选择其他老师发来的词库文件，一次性更新主体、风格和细节词条。</div>
           </div>
-          <button className="btn btn-import" onClick={handleRestoreBackup}>
-            选择备份文件
+          <button className="btn btn-import" onClick={handleBatchImport}>
+            批量导入
           </button>
         </div>
 
@@ -170,7 +170,7 @@ export default function TeacherPanel({
         </div>
       </div>
 
-      {backupMsg && <div className="import-msg">{backupMsg}</div>}
+      {batchMsg && <div className="import-msg">{batchMsg}</div>}
     </section>
   )
 }
