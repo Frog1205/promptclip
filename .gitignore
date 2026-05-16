@@ -1,0 +1,6 @@
+.claude/
+.vercel/
+node_modules/
+dist/
+*.tsbuildinfo
+output/

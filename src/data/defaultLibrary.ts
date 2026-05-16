@@ -1,0 +1,86 @@
+import { LibraryData } from '../types'
+
+const defaultTemplates = [
+  {
+    id: 'tpl-1',
+    name: '高原动物徽章',
+    subject: '雪豹',
+    style: '可爱卡通',
+    details: ['五色经幡', '远处雪山', '1:1 方形构图', '温暖明亮'],
+  },
+  {
+    id: 'tpl-2',
+    name: '石渠文创明信片',
+    subject: '扎溪卡草原',
+    style: '水彩',
+    details: ['藏八宝纹样', 'A6 尺寸', '温暖明亮', '五色经幡'],
+  },
+  {
+    id: 'tpl-3',
+    name: '藏文化角色设计',
+    subject: '格萨尔王',
+    style: '藏式插画',
+    details: ['藏戏面具', '背景虚化', '主体居中', '温暖明亮'],
+  },
+  {
+    id: 'tpl-4',
+    name: '星空草原插画',
+    subject: '星空 / 银河',
+    style: '梦幻 / 童话',
+    details: ['扎溪卡草原', '五色经幡', '远处雪山', '温暖明亮'],
+  },
+]
+
+export function getDefaultLibrary(): LibraryData {
+  return {
+    subjects: [
+      { id: 'sub-1', text: '牦牛 / 小牦牛' },
+      { id: 'sub-2', text: '藏族小朋友' },
+      { id: 'sub-3', text: '嘛呢石经墙' },
+      { id: 'sub-4', text: '转经筒' },
+      { id: 'sub-5', text: '雪豹' },
+      { id: 'sub-6', text: '黑颈鹤' },
+      { id: 'sub-7', text: '藏獒' },
+      { id: 'sub-8', text: '骏马 / 赛马' },
+      { id: 'sub-9', text: '帐篷 / 黑帐篷' },
+      { id: 'sub-10', text: '格萨尔王' },
+      { id: 'sub-11', text: '藏戏面具' },
+      { id: 'sub-12', text: '酥油花 / 酥油灯' },
+      { id: 'sub-13', text: '青稞穗' },
+      { id: 'sub-14', text: '星空 / 银河' },
+    ],
+    styles: [
+      { id: 'sty-1', text: '藏式插画' },
+      { id: 'sty-2', text: '可爱卡通' },
+      { id: 'sty-3', text: '唐卡风' },
+      { id: 'sty-4', text: '水彩' },
+      { id: 'sty-5', text: '油画' },
+      { id: 'sty-6', text: '绘本风' },
+      { id: 'sty-7', text: '像素风' },
+      { id: 'sty-8', text: '手绘线稿' },
+      { id: 'sty-9', text: '3D 渲染' },
+      { id: 'sty-10', text: '国风工笔' },
+      { id: 'sty-11', text: '皮影 / 剪纸' },
+      { id: 'sty-12', text: '极简扁平' },
+      { id: 'sty-13', text: '温暖光线' },
+      { id: 'sty-14', text: '梦幻 / 童话' },
+    ],
+    details: [
+      { id: 'det-1', text: '五色经幡' },
+      { id: 'det-2', text: '远处雪山' },
+      { id: 'det-3', text: '扎溪卡草原' },
+      { id: 'det-4', text: '夕阳金光' },
+      { id: 'det-5', text: '星空银河' },
+      { id: 'det-6', text: '藏八宝纹样' },
+      { id: 'det-7', text: '圆圆的眼睛' },
+      { id: 'det-8', text: '戴红色围巾' },
+      { id: 'det-9', text: '大耳朵 / 大眼睛' },
+      { id: 'det-10', text: '背景虚化' },
+      { id: 'det-11', text: '1:1 方形构图' },
+      { id: 'det-12', text: 'A6 尺寸' },
+      { id: 'det-13', text: '主体居中' },
+      { id: 'det-14', text: '温暖明亮' },
+    ],
+    templates: defaultTemplates,
+  }
+}
