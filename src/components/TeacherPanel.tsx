@@ -28,7 +28,7 @@ function csvCell(value: string): string {
   return `"${value.replace(/"/g, '""')}"`
 }
 
-function downloadFile(fileName: string, content: string, type: string) {
+function downloadFile(fileName: string, content: BlobPart, type: string) {
   const blob = new Blob([content], { type })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -69,6 +69,52 @@ function createImportTemplate(): string {
   ]
 
   return `\uFEFF${rows.map((row) => row.map(csvCell).join(',')).join('\n')}`
+}
+
+async function createImportTemplateWorkbook(): Promise<ArrayBuffer> {
+  const XLSX = await import('xlsx')
+  const rows = [
+    ['类型', '名称', '主体', '风格', '细节'],
+    ['主体', '藏族小朋友', '', '', ''],
+    ['主体', '雪豹', '', '', ''],
+    ['主体', '扎溪卡草原', '', '', ''],
+    ['风格', '水彩', '', '', ''],
+    ['风格', '可爱卡通', '', '', ''],
+    ['细节', 'A6尺寸横版明信片', '', '', ''],
+    ['细节', '五色经幡', '', '', ''],
+    ['细节', '藏八宝纹样', '', '', ''],
+    ['细节', '温暖明亮', '', '', ''],
+    ['模板', '石渠文创明信片', '扎溪卡草原', '水彩', '藏八宝纹样、A6尺寸横版明信片、温暖明亮'],
+  ]
+  const worksheet = XLSX.utils.aoa_to_sheet(rows)
+  worksheet['!cols'] = [
+    { wch: 14 },
+    { wch: 24 },
+    { wch: 22 },
+    { wch: 18 },
+    { wch: 48 },
+  ]
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, '批量导入模板')
+  return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+}
+
+async function getImportTexts(file: File, buffer: ArrayBuffer): Promise<string[]> {
+  const fileName = file.name.toLowerCase()
+  if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+    try {
+      const XLSX = await import('xlsx')
+      const workbook = XLSX.read(buffer, { type: 'array' })
+      return workbook.SheetNames.map((sheetName) => {
+        const sheet = workbook.Sheets[sheetName]
+        return XLSX.utils.sheet_to_csv(sheet)
+      }).filter(Boolean)
+    } catch {
+      return []
+    }
+  }
+
+  return decodeImportTexts(buffer)
 }
 
 function createLibraryHtml(library: LibraryData, libraryText: string): string {
@@ -170,22 +216,28 @@ export default function TeacherPanel({
     fileRef.current?.click()
   }
 
-  function handleDownloadTemplate() {
-    downloadFile('PromptClip-批量导入模板.csv', createImportTemplate(), 'text/csv;charset=utf-8')
-    showBatchMsg('✅ 已下载导入模板。用 Excel 或 WPS 填好后，再点“批量导入”。')
+  async function handleDownloadTemplate() {
+    const workbook = await createImportTemplateWorkbook()
+    downloadFile(
+      'PromptClip-批量导入模板.xlsx',
+      workbook,
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    showBatchMsg('✅ 已下载 Excel 导入模板。用 Excel 或 WPS 填好后，再点“批量导入”。')
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = async () => {
       const buffer = reader.result as ArrayBuffer
-      const ok = decodeImportTexts(buffer).some((text) => onImport(text))
+      const texts = await getImportTexts(file, buffer)
+      const ok = texts.some((text) => onImport(text))
       if (ok) {
         showBatchMsg('✅ 批量导入成功！词库已经更新。')
       } else {
-        showBatchMsg('❌ 这个文件不能导入词库，请使用“下载导入模板”生成的表格，或选择批量导出的词库文件。')
+        showBatchMsg('❌ 这个文件不能导入词库。支持 html、json、xlsx、csv，请确认表格里有“类型、名称”等列。')
       }
     }
     reader.readAsArrayBuffer(file)
@@ -260,7 +312,7 @@ export default function TeacherPanel({
         <div className="backup-card">
           <div>
             <div className="backup-title">批量导入词库</div>
-            <div className="backup-desc">支持导入批量词库网页文件，也支持导入按模板填写的表格文件。</div>
+            <div className="backup-desc">支持 html、json、xlsx、csv 等格式；Excel 模板可直接填写后导入。</div>
           </div>
           <button className="btn btn-import" onClick={handleBatchImport}>
             批量导入
@@ -270,7 +322,7 @@ export default function TeacherPanel({
         <input
           ref={fileRef}
           type="file"
-          accept=".html,.csv,.promptclip,.json,text/html,text/csv,application/json"
+          accept=".html,.json,.promptclip,.xlsx,.xls,.csv,text/html,text/csv,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
@@ -278,7 +330,7 @@ export default function TeacherPanel({
         <div className="backup-card template-card">
           <div>
             <div className="backup-title">下载导入模板</div>
-            <div className="backup-desc">先下载表格模板，按“类型、名称、主体、风格、细节”填写后再批量导入。</div>
+            <div className="backup-desc">下载 Excel 模板，按“类型、名称、主体、风格、细节”填写后再批量导入。</div>
           </div>
           <button className="btn btn-template" onClick={handleDownloadTemplate}>
             下载模板
