@@ -7,9 +7,9 @@ import PromptPreview from './components/PromptPreview'
 import TemplateBar from './components/TemplateBar'
 import TeacherPanel from './components/TeacherPanel'
 
-const STORAGE_KEY = 'promptclip-library'
-const OLD_A6_DETAIL = 'A6 尺寸'
-const NEW_A6_DETAIL = 'A6尺寸横版明信片'
+const STORAGE_KEY = 'promptclip-library-v2'
+const OLD_A6_DETAIL = 'A6尺寸横版明信片'
+const NEW_A6_DETAIL = '明信片A6横式尺寸'
 
 function normalizeLibrary(library: LibraryData): LibraryData {
   return {
