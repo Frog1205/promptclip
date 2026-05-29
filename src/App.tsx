@@ -7,12 +7,12 @@ import PromptPreview from './components/PromptPreview'
 import TemplateBar from './components/TemplateBar'
 import TeacherPanel from './components/TeacherPanel'
 
-const STORAGE_KEY = 'promptclip-library-v2'
+const STORAGE_KEY = 'promptclip-library-v4'
 const OLD_A6_DETAIL = 'A6尺寸横版明信片'
 const NEW_A6_DETAIL = '明信片A6横式尺寸'
 
 function normalizeLibrary(library: LibraryData): LibraryData {
-  return {
+  const normalized = {
     ...library,
     details: library.details.map((detail) =>
       detail.text === OLD_A6_DETAIL ? { ...detail, text: NEW_A6_DETAIL } : detail
@@ -23,6 +23,24 @@ function normalizeLibrary(library: LibraryData): LibraryData {
         detail === OLD_A6_DETAIL ? NEW_A6_DETAIL : detail
       ),
     })),
+  }
+
+  const mergeMissingDefaults = (items: WordItem[], defaultItems: WordItem[]) => {
+    const existingTexts = new Set(items.map((item) => item.text))
+    const missingDefaults = defaultItems.filter((item) => !existingTexts.has(item.text))
+    return [...missingDefaults, ...items]
+  }
+
+  const defaults = getDefaultLibrary()
+  const xichengTemplate = defaults.templates.find((template) => template.id === 'tpl-xicheng')
+  return {
+    subjects: mergeMissingDefaults(normalized.subjects, defaults.subjects),
+    styles: mergeMissingDefaults(normalized.styles, defaults.styles),
+    details: mergeMissingDefaults(normalized.details, defaults.details),
+    templates:
+      xichengTemplate && !normalized.templates.some((template) => template.id === xichengTemplate.id)
+        ? [xichengTemplate, ...normalized.templates]
+        : normalized.templates,
   }
 }
 
